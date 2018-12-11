@@ -13,11 +13,11 @@ private:
     ContainerT cont_;
     std::mutex mx_;
     const Notify notifier_;
-    std::thread th_;
+    std::thread notification_thread;
     std::condition_variable cv_;
     std::atomic_bool stop_flag = false;
 
-    void job();
+    void notification_job();
 
 public:
     AsyncNotifier(const Notify& notifier);
@@ -34,7 +34,7 @@ public:
 #endif // ASYNC_NOTIFIER_H
 
 template<class ContainerT, class Notify>
-void AsyncNotifier<ContainerT, Notify>::job(){
+void AsyncNotifier<ContainerT, Notify>::notification_job(){
     while(true){
         //Wait until container not empty or stop flag isn't set
         {
@@ -65,7 +65,7 @@ void AsyncNotifier<ContainerT, Notify>::job(){
 
 template<class ContainerT, class Notify>
 AsyncNotifier<ContainerT, Notify>::AsyncNotifier(const Notify &notifier) : notifier_(notifier) {
-    th_ = std::thread([this]{job();});
+    notification_thread = std::thread([this]{notification_job();});
 }
 
 template<class ContainerT, class Notify>
@@ -92,5 +92,5 @@ template<class ContainerT, class Notify>
 AsyncNotifier<ContainerT, Notify>::~AsyncNotifier(){
     stop_flag = true;
     cv_.notify_one();
-    th_.join();
+    notification_thread.join();
 }
